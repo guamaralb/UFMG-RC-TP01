@@ -5,7 +5,6 @@ import time
 import sys
 from packet import PacketClass, TYPE_ENUM
 from pwd_guess import PwdGuess
-from rich import print
 
 SIZE = 1024
 # SAW = stop and wait

@@ -59,7 +59,7 @@ class PacketClass():
             if max_tries is not None and self.numseq > max_tries:
                 return False, 0
             if not self.pwd_guess.is_valid():
-                return False, self.numseq  # ERR NUMSEQ > 0: senha inválida, pode tentar de novo
+                return False, self.numseq
         return True, None
 
     def _checksum_is_valid(self):
