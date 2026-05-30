@@ -136,11 +136,10 @@ class ClientSocket:
         while(len(line) < self.pwd_size):
             line += " "
 
-        pg = PwdGuess(pwd_guess_txt=line)
+        pwd_guess = PwdGuess(pwd_guess_txt=line)
         
-        # Se a validação falhou (ex: senha curta com espaços no meio),
-        # cria diretamente dos bytes para o servidor rejeitar com ERR
-        if not hasattr(pg, 'txt'):
+        # Se a validação da senha falhar cria diretamente dos bytes para o servidor rejeitar com ERR
+        if not hasattr(pwd_guess, 'txt'):
             raw = b""
             for c in line[:8]:
                 if c.isdigit():
@@ -149,9 +148,9 @@ class ClientSocket:
                     raw += bytes([ord(c)])
             while len(raw) < 8:
                 raw += b" "
-            pg = PwdGuess(pwd_guess_bytes=raw)
+            pwd_guess = PwdGuess(pwd_guess_bytes=raw)
         
-        return pg
+        return pwd_guess
 
 
 def main():
