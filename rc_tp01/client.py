@@ -3,20 +3,10 @@ import time
 import sys
 from packet import PacketClass, TYPE_ENUM
 from pwd_guess import PwdGuess
-
+from rich import print
 
 SIZE = 1024
-
-# REMOVER AQUI VVVVVVVVVVVVV
-cont = 0
-
-tentativas = [
-    "2154",
-    "2495",
-    "2745",
-    "2345"
-]
-# REMOVER AQUI ^^^^^^^^^^^^^^
+SAW_TRIES = 3
 
 class ClientSocket:
     def __init__(self, server_addr):
@@ -24,7 +14,11 @@ class ClientSocket:
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.max_tries = None
         self.try_count = 0
-        print("CLIENT created")
+        self.last_try_numseq = -2
+        self.pwd_size = -1
+        
+        self.soc.settimeout(1.0)
+        #print("~CLIENT created")
         
         
     def __enter__(self):
@@ -37,18 +31,18 @@ class ClientSocket:
         
     def connect_to_server(self):
         self.soc.connect(self.server_addr)
-        print("CLIENT connected to server: ", self.server_addr)
+        #print("~CLIENT connected to server: ", self.server_addr)
         
     def close(self):
         self.soc.close()
-        print("CLIENT socket closed")
+        #print("~CLIENT socket closed")
         
     ##################################################
     # SEND
     ##################################################
     def sendto_server(self, pckt: PacketClass):
         send_status = self.soc.sendto(pckt.bytes, self.server_addr)
-        print("CLIENT pckt sent: ", pckt.txt())
+        #print("~CLIENT pckt sent: ", pckt.txt())
         return send_status
         
             
@@ -59,11 +53,11 @@ class ClientSocket:
         pckt_bytes, server_addr = self.soc.recvfrom(SIZE)
         pckt = PacketClass(pckt_bytes=pckt_bytes)
 
-        print("CLIENT received: ", pckt.txt())
+        #print("~CLIENT received: ", pckt.txt())
         return pckt, server_addr
     
     def recv_res_to_hel(self):
-        print("CLIENT waiting for RES to HEL")
+        #print("~CLIENT waiting for RES to HEL")
         pckt, server_addr = self._recvfrom()
         
         pwd_size = 0
@@ -78,12 +72,12 @@ class ClientSocket:
         return pckt
     
     def recv_res_to_try(self):
-        print("CLIENT waiting for RES to TRY")
+        #print("~CLIENT waiting for RES to TRY")
         pckt, server_addr = self._recvfrom()
         return pckt
     
     def recv_res_to_bye(self):
-        print("CLIENT waiting for RES to BYE")
+        #print("~CLIENT waiting for RES to BYE")
         pckt, server_addr = self._recvfrom()
         return pckt
     
@@ -92,20 +86,21 @@ class ClientSocket:
     ##################################################
     def validate_res_to_hel(self, pckt: PacketClass):
         if True:
-            print("CLIENT RES to HEL validated")
-            self.max_tries = pckt.seqnum
+            #print("~CLIENT RES to HEL validated")
+            self.max_tries = pckt.numseq
+            self.pwd_size = pckt.pwd_guess.txt.count("?")
             return True
 
 
     def validate_res_to_try(self, pckt: PacketClass):
         if True:
-            print("CLIENT RES to TRY validated")
+            #print("~CLIENT RES to TRY validated")
             return True
 
 
     def validate_res_to_bye(self, pckt: PacketClass):
         if True:
-            print("CLIENT RES to TRY validated")
+            #print("~CLIENT RES to TRY validated")
             return True
 
     ##################################################
@@ -113,26 +108,32 @@ class ClientSocket:
     ##################################################
     
     def generate_hel_pckt(self):
-        print("CLIENT generating HEL pckt")
-        pwd_guess = PwdGuess(pwd_guess_txt=" " * 8, is_hel=True)
-        hel_pckt = PacketClass(type=TYPE_ENUM.HEL, seqnum=0, pwd_guess=pwd_guess)
+        #print("~CLIENT generating HEL pckt")
+        pwd_guess = PwdGuess(pwd_guess_txt=" " * 8)
+        hel_pckt = PacketClass(type=TYPE_ENUM.HEL, numseq=0, pwd_guess=pwd_guess)
         
         return hel_pckt
 
     def generate_try_pckt(self, pwd_guess_txt):
+        
         self.try_count += 1
-        print(f"CLIENT generating TRY ({self.try_count}) pckt ")
+        numseq = self.try_count
+        self.last_try_numseq = numseq
+        #print("~CLIENT generating TRY (", self.try_count, "pckt")
         pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
-        try_pckt = PacketClass(type=TYPE_ENUM.TRY, seqnum=self.try_count, pwd_guess=pwd_guess)
+        try_pckt = PacketClass(
+            type=TYPE_ENUM.TRY,
+            numseq=self.try_count,
+            pwd_guess=pwd_guess
+        )
         return try_pckt
 
     def generate_bye_pckt(self, pwd_guess_txt):
-        self.try_count += 1
-        print(f"CLIENT generating BYE ({self.try_count}) pckt ")
+        #print("~CLIENT generating BYE (", self.try_count, "pckt")
         pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
         bye_pckt = PacketClass(
             type=TYPE_ENUM.BYE,
-            seqnum=self.try_count,
+            numseq=self.last_try_numseq,
             pwd_guess=pwd_guess
         )
         return bye_pckt
@@ -140,24 +141,15 @@ class ClientSocket:
     ##################################################
     # OTHER
     ##################################################
-    def get_new_guess(self, i, max_attempts):
-        print("CLIENT getting guess from user")
+    def get_new_guess(self):
         
-        # pwd_guess_txt = sys.stdin.readline()
+        pwd_guess_txt = sys.stdin.readline().strip()
+        while(len(pwd_guess_txt) < self.pwd_size):
+            pwd_guess_txt += " "
+
+        pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
         
-        # REMOVER AQUI VVVVVVVVVVVVV
-        global cont
-        global tentativas
-        
-        pwd_guess = PwdGuess(pwd_guess_txt=tentativas[cont])
-        cont += 1
-        # REMOVER AQUI ^^^^^^^^^^^^^^
-        
-        # pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
-        
-        return  pwd_guess
-    
-        
+        return pwd_guess
 
 
 def main():
@@ -170,37 +162,92 @@ def main():
         client.connect_to_server()
         
         hel_pckt = client.generate_hel_pckt()
-        send_status = client.sendto_server(hel_pckt)
         
-        res_to_hel_pckt = client.recv_res_to_hel()
-
-        if client.validate_res_to_hel(res_to_hel_pckt):
-            max_tries = client.max_tries
-
-            for i in range(max_tries):
-                pwd_guess = client.get_new_guess(i, max_tries)
+        for i in range(SAW_TRIES):
+            try:
+                send_status = client.sendto_server(hel_pckt)
+                res_to_hel_pckt = client.recv_res_to_hel()
+            
+                if client.validate_res_to_hel(res_to_hel_pckt):
+                    max_tries = client.max_tries
+                    print(f"[bold blue]NA={client.pwd_size}, NT={client.max_tries}[/bold blue]")
+                    break
                 
-                if i < max_tries - 1:
-                    try_pckt = client.generate_try_pckt(pwd_guess.txt)
-                    send_status = client.sendto_server(try_pckt)
+            except socket.timeout as msg:
+                if i == SAW_TRIES - 1:
+                    print("[bold blue]NO RES[/bold blue]")
+                    sys.exit()
+                else:
+                    print("~CLIENT error while sending HEL - i =", i)
+                
+            except ConnectionRefusedError as msg:
+                print("[bold blue]CONNECTION REFUSED[/bold blue]")
+                sys.exit()
+
+        for i in range(max_tries):
+            pwd_guess = client.get_new_guess()
+            
+            if i < max_tries - 1:
+                try_pckt = client.generate_try_pckt(pwd_guess.txt)
+                
+                for i in range(SAW_TRIES):
+                    try:
+                        send_status = client.sendto_server(try_pckt)
+                        res_to_try_pckt = client.recv_res_to_try()
                     
-                    res_to_try_pckt = client.recv_res_to_try()
-                    
-                    if client.validate_res_to_try(res_to_try_pckt):
-                        ...
-                    else:
-                        print("CLIENT error validating RES to TRY")
+                        if client.validate_res_to_try(res_to_try_pckt):
+                            pattern = res_to_try_pckt.pwd_guess.txt[:client.pwd_size]
+                            
+                            print(f"[bold blue]{client.try_count}({res_to_try_pckt.numseq}) {pattern}[/bold blue]")
+                            break
+                            ...
+                        else:
+                            #print("~CLIENT error validating RES to TRY")
+                            ...
+                    except socket.timeout as msg:
+                        if i == SAW_TRIES - 1:
+                            print("[bold blue]NO RES[/bold blue]")
+                            sys.exit()
+                            
+                        else:
+                            print("~CLIENT error while sending TRY n", client.try_count, "- i =", i)
+                    except ConnectionRefusedError as msg:
+                        print("[bold blue]CONNECTION REFUSED[/bold blue]")
+                        sys.exit()
+                if res_to_try_pckt.pwd_guess.txt[:client.pwd_size] == "*" * client.pwd_size:
+                    break
                 
                 else:
-                    bye_pckt = client.generate_bye_pckt(pwd_guess.txt)
+                    continue
+            
+            bye_pckt = client.generate_bye_pckt(pwd_guess.txt)
+                        
+            for i in range(SAW_TRIES):
+                try:
                     send_status = client.sendto_server(bye_pckt)
-                    
                     res_to_bye_pckt = client.recv_res_to_bye()
-                    
+                
                     if client.validate_res_to_bye(res_to_bye_pckt):
-                        client.close()
+                        pattern = res_to_bye_pckt.pwd_guess.txt[:client.pwd_size]
+
+                        print(f"[bold blue]{client.try_count}({res_to_bye_pckt.numseq}) {pattern}[/bold blue]")
+                        print(f"[bold blue]Senha={pattern}[/bold blue]")
+
+                        break
                     else:
-                        print("CLIENT error validating RES to BYE")
+                        #print("~CLIENT error validating RES to BYE")
+                        ...
+                        
+                except socket.timeout as msg:
+                    if i == SAW_TRIES - 1:
+                        print("[bold blue]NO RES[/bold blue]")
+                        sys.exit()
+                    else:
+                        print("~CLIENT error while sending BYE - i =", i)
+                except ConnectionRefusedError as msg:
+                    print("[bold blue]CONNECTION REFUSED[/bold blue]")
+                    sys.exit()
+            client.close()
         
 
 if __name__ == '__main__':

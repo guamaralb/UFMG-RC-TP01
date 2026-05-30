@@ -3,7 +3,7 @@ import struct
 from pwd_guess import PwdGuess
 
 STRUCT_CODE_12 = "!BBh8s"
-STRUCT_CODE_8 = "!BB"
+STRUCT_CODE_4 = "!BBh"
 
 class TYPE_ENUM(Enum):
     HEL = 1
@@ -18,7 +18,7 @@ class PacketClass():
         self,
         type: bytes=None,
         checksum: bytes=None,
-        seqnum: int=None,
+        numseq: int=None,
         pwd_guess: PwdGuess=None,
         pckt_bytes: bytes=None,
     ):        
@@ -28,8 +28,8 @@ class PacketClass():
             else:
                 ...
                 
-            if seqnum is not None:
-                self.seqnum = int(seqnum)
+            if numseq is not None:
+                self.numseq = int(numseq)
             else:
                 ...
                 
@@ -51,14 +51,14 @@ class PacketClass():
     
     def _calculate_checksum(self):
         
-        seqnum_bytes = struct.pack("!h", self.seqnum)
-        seqnum_high = seqnum_bytes[0]
-        seqnum_low = seqnum_bytes[1]
+        numseq_bytes = struct.pack("!h", self.numseq)
+        numseq_high = numseq_bytes[0]
+        numseq_low = numseq_bytes[1]
         
         bytes = [
             self.type.value,
-            seqnum_high,
-            seqnum_low,
+            numseq_high,
+            numseq_low,
         ]
         
         if type == TYPE_ENUM.TRY or type == TYPE_ENUM.RES:
@@ -77,47 +77,62 @@ class PacketClass():
         return checksum
     
     def _unpack(self, pckt_bytes):
-        print("PACKET unpacking")
+        #print("~PACKET unpacking")
+        type_byte = pckt_bytes[:1]
+        type_value = int.from_bytes(type_byte)
+        
+        type = TYPE_ENUM(type_value)
+        
         struct_code = ''
         
         if type == TYPE_ENUM.TRY or type == TYPE_ENUM.RES:
-            struct_code = STRUCT_CODE_12
+            type_value, self.checksum, self.numseq, pwd_guess_bytes = struct.unpack(STRUCT_CODE_12, pckt_bytes)
+            self.pwd_guess = PwdGuess(pwd_guess_bytes=pwd_guess_bytes)
         else:
-            struct_code = STRUCT_CODE_8
+            type_value, self.checksum, self.numseq = struct.unpack(STRUCT_CODE_4, pckt_bytes)
 
-        type_value, self.checksum, self.seqnum, pwd_guess_bytes = struct.unpack(struct_code, pckt_bytes)
         
         self.type = TYPE_ENUM(type_value)
         is_hel = (self.type == TYPE_ENUM.HEL)
-        self.pwd_guess = PwdGuess(pwd_guess_bytes=pwd_guess_bytes, is_hel=is_hel)
         self.bytes = pckt_bytes
             
     def _pack(self):      
-        print("PACKET packing")
+        #print("~PACKET packing")
         struct_code = ''
         
-        if type == TYPE_ENUM.TRY or type == TYPE_ENUM.RES:
+        elements = [
+            self.type.value,
+            self.checksum,
+            self.numseq,
+        ]
+        
+        if self.type == TYPE_ENUM.TRY or self.type == TYPE_ENUM.RES:
             struct_code = STRUCT_CODE_12
+            elements.append(self.pwd_guess.bytes)
         else:
-            struct_code = STRUCT_CODE_8
+            struct_code = STRUCT_CODE_4
 
         pckt_bytes = struct.pack(
             struct_code,
-            self.type.value,
-            self.checksum,
-            self.seqnum,
-            self.pwd_guess.bytes
+            *elements
         )
         
         return pckt_bytes
     
     
     def txt(self):
-        return(
-            f"{str(self.type.name)} | "
-            f"{str(self.checksum)} | "
-            f"{str(self.seqnum)} | "
-            f"{str(self.pwd_guess.bytes)} | "
-        )
+        if self.type == TYPE_ENUM.TRY or self.type == TYPE_ENUM.RES:
+            return(
+                f"{str(self.type.name)} | "
+                f"{str(self.checksum)} | "
+                f"{str(self.numseq)} | "
+                f"{str(self.pwd_guess.bytes)} | "
+            )
+        else:
+            return(
+                f"{str(self.type.name)} | "
+                f"{str(self.checksum)} | "
+                f"{str(self.numseq)}"
+            )
 
         
