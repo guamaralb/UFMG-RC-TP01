@@ -1,7 +1,6 @@
 # GUSTAVO AMARAL BERNARDINO
 
 import socket
-import time
 import sys
 from packet import PacketClass, TYPE_ENUM
 from pwd_guess import PwdGuess
@@ -102,12 +101,11 @@ class ClientSocket:
     # Método para gerar o pckt dos TRY, que aumenta o numero de tries
     # e possui numseq variável. Aqui ele precisa inserir a pwd no pckt
     # Ele atualiza também o numseq do ultimo TRY
-    def generate_try_pckt(self, pwd_guess_txt):
+    def generate_try_pckt(self, pwd_guess: PwdGuess):
         
         self.try_count += 1
         numseq = self.try_count
         self.last_try_numseq = numseq
-        pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
         try_pckt = PacketClass(
             type=TYPE_ENUM.TRY,
             numseq=self.try_count,
@@ -125,19 +123,35 @@ class ClientSocket:
         return bye_pckt
 
     # Obtem pwd da linha de comando
+    # Retorna None se EOF, ou um PwdGuess com os bytes da tentativa
     def get_new_guess(self):
         
-        pwd_guess_txt = sys.stdin.readline().strip()
+        line = sys.stdin.readline()
         
-        if pwd_guess_txt == "|":
-            sys.exit()
+        if line == "":
+            return None
+        
+        line = line.strip()
             
-        while(len(pwd_guess_txt) < self.pwd_size):
-            pwd_guess_txt += " "
+        while(len(line) < self.pwd_size):
+            line += " "
 
-        pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
+        pg = PwdGuess(pwd_guess_txt=line)
         
-        return pwd_guess
+        # Se a validação falhou (ex: senha curta com espaços no meio),
+        # cria diretamente dos bytes para o servidor rejeitar com ERR
+        if not hasattr(pg, 'txt'):
+            raw = b""
+            for c in line[:8]:
+                if c.isdigit():
+                    raw += bytes([int(c)])
+                else:
+                    raw += bytes([ord(c)])
+            while len(raw) < 8:
+                raw += b" "
+            pg = PwdGuess(pwd_guess_bytes=raw)
+        
+        return pg
 
 
 def main():
@@ -178,7 +192,10 @@ def main():
         while tries_success < max_tries - 1:
             pwd_guess = client.get_new_guess()
             
-            try_pckt = client.generate_try_pckt(pwd_guess.txt)
+            if pwd_guess is None:
+                break
+            
+            try_pckt = client.generate_try_pckt(pwd_guess)
             res_to_try_pckt = None
 
             for j in range(SAW_TRIES):
@@ -206,7 +223,7 @@ def main():
                     sys.exit()
                 continue
             
-            # Obtem o padrão do server e verifica se é o erto
+            # Obtem o padrão do server e verifica se é o certo
             pattern = res_to_try_pckt.pwd_guess.txt[:client.pwd_size]
             print(f"{client.try_count}({res_to_try_pckt.numseq}) {pattern}")
             tries_success += 1
