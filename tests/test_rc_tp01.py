@@ -102,7 +102,7 @@ class TestPwdGuessEncoding:
         assert pg.bytes[3] == ord('*')
 
     def test_decode_bytes_inteiros_para_digitos(self):
-        """Bytes [2,3,4,5,...] devem decodificar para '2345'."""
+        """Bytes [2,3,4,5,] devem decodificar para '2345'."""
         raw = bytes([2, 3, 4, 5, 32, 32, 32, 32])
         pg = PwdGuess(pwd_guess_bytes=raw)
         assert pg.txt[:4] == "2345"

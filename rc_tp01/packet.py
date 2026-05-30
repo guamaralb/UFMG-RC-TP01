@@ -37,8 +37,8 @@ class PacketClass():
                 if pwd_guess is not None:
                     self.pwd_guess = pwd_guess
                 else:
-                    ...        
-
+                    ...
+                    
             if checksum is None:
                 self.checksum = self._calculate_checksum()
             else:
@@ -77,7 +77,7 @@ class PacketClass():
         return checksum
     
     def _unpack(self, pckt_bytes):
-        #print("~PACKET unpacking")
+        ##print("~PACKET unpacking")
         type_byte = pckt_bytes[:1]
         type_value = int.from_bytes(type_byte)
         
@@ -93,11 +93,10 @@ class PacketClass():
 
         
         self.type = TYPE_ENUM(type_value)
-        is_hel = (self.type == TYPE_ENUM.HEL)
         self.bytes = pckt_bytes
             
     def _pack(self):      
-        #print("~PACKET packing")
+        ##print("~PACKET packing")
         struct_code = ''
         
         elements = [

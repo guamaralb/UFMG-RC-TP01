@@ -5,7 +5,7 @@ class PwdGuess():
     pwd_size = 0
     
     def __init__(self, pwd_guess_txt: str = None, pwd_guess_bytes: bytes = None):
-        #print("~PWDGUESS: ", pwd_guess_txt, pwd_guess_bytes)        
+        #print("~", pwd_guess_txt, pwd_guess_bytes)
         if isinstance(pwd_guess_txt, str):
             
             if self._check_is_all_zeros(pwd_guess_txt):
@@ -17,37 +17,77 @@ class PwdGuess():
                 self.bytes = self._encode_pwd()
                 
             else:
-                #print("~PWDGUESS: Error de senha invalida quando txt")
-                ...
+                print("PWDGUESS: Error de senha invalida quando txt")
+                
                 
         elif isinstance(pwd_guess_bytes, bytes):
             self.bytes = pwd_guess_bytes
             self.txt = self._decode_pwd()
-            
+                        
             if not self._validate_pwd_guess(self.txt):
-                #print("~PWDGUESS: Error de senha invalida quando bytes")
-                ...
+                print("PWDGUESS: Error de senha invalida quando bytes")
+                
 
         else:
-            #print("~PWDGUESS: Error de nenhum valor informado no tipo correto")
-            ...
+            print("PWDGUESS: Error de nenhum valor informado no tipo correto")
+            
 
 
     def _validate_pwd_guess(self, txt):
-        if self._check_size(txt):
-            #print("~ERRO NA VALIDAÇÃO DA SENHA: B")
+        if not self._has_right_size(txt):
+            #print("~A")
             return False
 
         if not self._check_valid_chars(txt):
-            #print("~ERRO NA VALIDAÇÃO DA SENHA: C")
+            #print("~B")
             return False
 
         if self._check_repeated_chars(txt):
-            #print("~ERRO NA VALIDAÇÃO DA SENHA: D")
+            #print("~C")
             return False
 
         return True
         
+
+    def _has_right_size(self, txt: str):
+        if len(txt) == 0 or len(txt) > 8:
+            return False
+
+        frist = txt[0]
+
+        if frist == "?":
+            return True
+
+        if frist in "+-*":
+            beg = txt[:self.pwd_size]
+            end = txt[self.pwd_size:]
+
+            for c in beg:
+                if c not in "+-*":
+                    return False
+
+            for c in end:
+                if c != "0" and c != " ":
+                    return False
+
+            return True
+
+        if frist.isdigit():
+            beg = txt[:self.pwd_size]
+            end = txt[self.pwd_size:]
+
+            for c in beg:
+                if not c.isdigit():
+                    return False
+
+            for c in end:
+                if c != "0" and c != " ":
+                    return False
+
+            return True
+
+        return False
+
 
     def _check_is_all_zeros(self, txt):
         if len(txt) != self.pwd_size:
@@ -67,18 +107,6 @@ class PwdGuess():
         
         return True
 
-
-    def _check_size(self, txt):
-        spaces = 0
-        
-        for c in txt:
-            if c == " ":
-                spaces += 1
-            
-        if self.pwd_size + spaces == 8:
-            True
-        else:
-            False
 
 
     def _check_repeated_chars(self, txt):

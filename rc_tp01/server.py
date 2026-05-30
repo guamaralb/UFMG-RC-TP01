@@ -14,7 +14,7 @@ class ServerSocket:
         self.max_tries = int(max_tries)
         self.pwd_size = len(pwd_answer_txt)
         self.numseq = 1
-        #print("~SERVER created")
+        ##print("~SERVER created")
         
     def __enter__(self):
         return self
@@ -25,22 +25,22 @@ class ServerSocket:
     def bind(self, addr):
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc.bind(addr)
-        #print("~SERVER binded to: ", addr)
+        ##print("~SERVER binded to: ", addr)
 
     def _set_client(self, client_addr):
         self.client_addr = client_addr
-        #print("~SERVER client set:", client_addr)
+        ##print("~SERVER client set:", client_addr)
     
     def close(self):
         self.soc.close()
-        #print("~SERVER socket closed")
+        ##print("~SERVER socket closed")
 
     ##################################################
     # SEND
     ##################################################
     def sendto_client(self, pckt: PacketClass):
         send_status = self.soc.sendto(pckt.bytes, self.client_addr)
-        #print("~SERVER pckt sent: ", pckt.bytes)
+        ##print("~SERVER pckt sent: ", pckt.bytes)
         return send_status
 
     ##################################################
@@ -49,17 +49,17 @@ class ServerSocket:
     def _recvfrom(self):
         pckt_bytes, client_addr = self.soc.recvfrom(SIZE)
         pckt = PacketClass(pckt_bytes=pckt_bytes)
-        #print("~SERVER received: ", pckt.txt())
+        ##print("~SERVER received: ", pckt.txt())
         return pckt, client_addr
 
     def recv_hel(self):
-        #print("~SERVER waiting for HEL")
+        ##print("~SERVER waiting for HEL")
         pckt, client_addr = self._recvfrom()
         self._set_client(client_addr)
         return pckt
 
     def recv_try(self):
-        #print("~SERVER waiting for TRY")
+        ##print("~SERVER waiting for TRY")
         pckt, client_addr = self._recvfrom()
         self._set_client(client_addr)
         return pckt
@@ -70,26 +70,23 @@ class ServerSocket:
     def validate_hel_pckt(self, pckt: PacketClass):
         if True:
             self.last_client_numseq = pckt.numseq
-            #print("~SERVER HEL validated")
             return True
 
     def validate_try_pckt(self, pckt):
         if True:
             self.last_client_numseq = pckt.numseq
-            #print("~SERVER TRY validated")
             return True
 
     def validate_bye_pckt(self, pckt):
         if True:
             self.last_client_numseq = pckt.numseq
-            #print("~SERVER BYE validated")
             return True
 
     ##################################################
     # PCKT GENERATORS
     ##################################################
     def generate_pkct_res_to_hel(self):
-        #print("~SERVER generating RES to HEL pckt")
+        ##print("~SERVER generating RES to HEL pckt")
         pwd_guess_sample = "?" * self.pwd_size + " " * (8 - self.pwd_size)
         
         pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_sample)
@@ -97,10 +94,10 @@ class ServerSocket:
         return res_to_hel_pckt
     
     def generate_pkct_res_to_try(self, pckt_try: PacketClass):
-        #print("~SERVER generating RES to TRY pckt")
+        ##print("~SERVER generating RES to TRY pckt")
         try_numseq = pckt_try.numseq
         
-        pwd_answer_to_try_txt = self._generate_answer_to_pwd_guess(pckt_try.pwd_guess)
+        pwd_answer_to_try_txt = self._generate_pattern_to_pwd_guess(pckt_try.pwd_guess)
         
         pwd_answer_to_try = PwdGuess(pwd_guess_txt=pwd_answer_to_try_txt)
              
@@ -114,8 +111,8 @@ class ServerSocket:
 
         return res_to_try_pckt
     
-    def generate_pkct_res_to_bye(self, pckt_bye: PacketClass):        
-        #print("~SERVER generating RES to BYE pckt")        
+    def generate_pkct_res_to_bye(self):        
+        ##print("~SERVER generating RES to BYE pckt")        
         
         pwd_answer_to_bye = PwdGuess(pwd_guess_txt=self.pwd_answer_txt)
              
@@ -130,7 +127,7 @@ class ServerSocket:
     ##################################################
     # OTHER
     ##################################################
-    def _generate_answer_to_pwd_guess(self, pwd_guess: PwdGuess):
+    def _generate_pattern_to_pwd_guess(self, pwd_guess: PwdGuess):
         pwd_guess_txt = pwd_guess.txt
         pwd_answer_to_try_txt = ["."] * self.pwd_size        
         
@@ -173,6 +170,9 @@ def main():
             last_pckt_sent = res_to_hel_pckt
             send_status = server.sendto_client(res_to_hel_pckt)
         
+        else:
+            print("SERVER error validating HEL pckt")
+        
         while True:
             try_or_bye_pckt = server.recv_try()
             
@@ -189,12 +189,11 @@ def main():
                     last_pckt_sent = res_to_try_pckt
                     
                 else:
-                    #print("~SERVER error validating TRY pckt")
-                    #print("~SERVER error validanting TRY pckt")
-                    ...
+                    print("SERVER error validating TRY pckt")
+                    
             elif try_or_bye_pckt.type.name == "BYE":
                 if server.validate_bye_pckt(try_or_bye_pckt):
-                    res_to_bye_pckt = server.generate_pkct_res_to_bye(try_or_bye_pckt)
+                    res_to_bye_pckt = server.generate_pkct_res_to_bye()
                     send_status = server.sendto_client(res_to_bye_pckt)
 
                     last_client_numseq = try_or_bye_pckt.numseq
@@ -204,8 +203,7 @@ def main():
                     break
                     
                 else:
-                    #print("~SERVER error validanting BYE pckt")
-                    ...
+                    print("SERVER error validating BYE pckt")                    
             
             server.numseq += 1
             
