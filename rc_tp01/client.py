@@ -51,8 +51,9 @@ class ClientSocket:
     ##################################################
     def _recvfrom(self):
         pckt_bytes, server_addr = self.soc.recvfrom(SIZE)
-        pckt = PacketClass(pckt_bytes=pckt_bytes)
-
+        pckt = PacketClass.try_create_from_bytes(pckt_bytes)
+        if pckt is None:
+            socket.timeout("malformed packet")
         return pckt, server_addr
     
     def recv_res_to_hel(self):
