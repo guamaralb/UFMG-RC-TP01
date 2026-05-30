@@ -6,33 +6,25 @@ class PwdGuess():
     
     def __init__(self, pwd_guess_txt: str = None, pwd_guess_bytes: bytes = None):
         #print("~", pwd_guess_txt, pwd_guess_bytes)
-        if isinstance(pwd_guess_txt, str):
-            
-            if self._check_is_all_zeros(pwd_guess_txt):
-                pwd_guess_txt = self._create_random_pwd()
-                
-            if self._validate_pwd_guess(pwd_guess_txt):
-                
+            if isinstance(pwd_guess_txt, str):
+
+                if self._check_is_all_zeros(pwd_guess_txt):
+                    pwd_guess_txt = self._create_random_pwd()
+
                 self.txt = pwd_guess_txt
                 self.bytes = self._encode_pwd()
-                
+
+            elif isinstance(pwd_guess_bytes, bytes):
+                self.bytes = pwd_guess_bytes
+                self.txt = self._decode_pwd()
+
             else:
-                print("PWDGUESS: Error de senha invalida quando txt")
-                
-                
-        elif isinstance(pwd_guess_bytes, bytes):
-            self.bytes = pwd_guess_bytes
-            self.txt = self._decode_pwd()
-                        
-            if not self._validate_pwd_guess(self.txt):
-                print("PWDGUESS: Error de senha invalida quando bytes")
-                
+                print("PWDGUESS: Error de nenhum valor informado no tipo correto")            
 
-        else:
-            print("PWDGUESS: Error de nenhum valor informado no tipo correto")
-            
-
-
+    def is_valid(self):
+        return self._validate_pwd_guess(self.txt)
+    
+    
     def _validate_pwd_guess(self, txt):
         if not self._has_right_size(txt):
             #print("~A")

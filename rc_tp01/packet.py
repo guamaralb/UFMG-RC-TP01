@@ -49,6 +49,14 @@ class PacketClass():
         else:           
             self._unpack(pckt_bytes)
     
+    def is_valid(self):
+        if not self.pwd_guess.is_valid():
+            return False, 9
+        if not self._protocol_is_valid():
+            return False, 0
+        else:
+            return True, None
+        
     def _calculate_checksum(self):
         
         numseq_bytes = struct.pack("!h", self.numseq)

@@ -63,25 +63,7 @@ class ServerSocket:
         pckt, client_addr = self._recvfrom()
         self._set_client(client_addr)
         return pckt
-            
-    ##################################################
-    # VALIDATE
-    ##################################################
-    def validate_hel_pckt(self, pckt: PacketClass):
-        if True:
-            self.last_client_numseq = pckt.numseq
-            return True
-
-    def validate_try_pckt(self, pckt):
-        if True:
-            self.last_client_numseq = pckt.numseq
-            return True
-
-    def validate_bye_pckt(self, pckt):
-        if True:
-            self.last_client_numseq = pckt.numseq
-            return True
-
+        
     ##################################################
     # PCKT GENERATORS
     ##################################################
@@ -145,7 +127,7 @@ class ServerSocket:
         pwd_answer_to_try_txt = "".join(pwd_answer_to_try_txt)
         
         return pwd_answer_to_try_txt
-        
+
 def main():
     [_, port, pwd_answer_txt, max_tries] = sys.argv
     port = int(port)
@@ -164,13 +146,16 @@ def main():
         
         hel_pckt = server.recv_hel()
         
-        if server.validate_hel_pckt(hel_pckt):
+        hel_is_valid, err_seqnum = hel_pckt.is_valid()
+        
+        if hel_is_valid:
             last_client_numseq = hel_pckt.numseq
             res_to_hel_pckt = server.generate_pkct_res_to_hel()
             last_pckt_sent = res_to_hel_pckt
             send_status = server.sendto_client(res_to_hel_pckt)
         
         else:
+            
             print("SERVER error validating HEL pckt")
         
         while True:
@@ -181,7 +166,9 @@ def main():
                 continue
                 
             if try_or_bye_pckt.type.name == "TRY":        
-                if server.validate_try_pckt(try_or_bye_pckt):
+                try_is_valid, err_seqnum = try_or_bye_pckt.is_valid()
+                
+                if try_is_valid:
                     res_to_try_pckt = server.generate_pkct_res_to_try(try_or_bye_pckt)
                     send_status = server.sendto_client(res_to_try_pckt)
                     
@@ -192,7 +179,9 @@ def main():
                     print("SERVER error validating TRY pckt")
                     
             elif try_or_bye_pckt.type.name == "BYE":
-                if server.validate_bye_pckt(try_or_bye_pckt):
+                bye_is_valid, err_seqnum = try_or_bye_pckt.is_valid()
+                
+                if bye_is_valid:
                     res_to_bye_pckt = server.generate_pkct_res_to_bye()
                     send_status = server.sendto_client(res_to_bye_pckt)
 
