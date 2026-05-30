@@ -1,3 +1,5 @@
+# GUSTAVO AMARAL BERNARDINO
+
 import socket
 import time
 import sys
@@ -6,9 +8,13 @@ from pwd_guess import PwdGuess
 from rich import print
 
 SIZE = 1024
+# SAW = stop and wait
 SAW_TRIES = 3
 
+# Classe que representa o socket do cliente
 class ClientSocket:
+    
+    # Inicializa e conecta de uma vez com o servidor
     def __init__(self, server_addr):
         self.server_addr = server_addr
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -18,33 +24,25 @@ class ClientSocket:
         self.pwd_size = -1
         
         self.soc.settimeout(1.0)
+        self.soc.connect(self.server_addr)
         
-        
+    # Metodos de enter e exit para garantir que a conexão fecha quando dá erro
     def __enter__(self):
         return self
-    
     
     def __exit__(self, exc_type, exc, tb):
         self.soc.close()
         
-        
-    def connect_to_server(self):
-        self.soc.connect(self.server_addr)
-        
+    # Metodo basico para manter a coerencia do main, sem chamar metodos de atributos
     def close(self):
         self.soc.close()
-        
-    ##################################################
-    # SEND
-    ##################################################
+    
+    # Método generico de envio, já vinculado ao server
     def sendto_server(self, pckt: PacketClass):
         send_status = self.soc.sendto(pckt.bytes, self.server_addr)
         return send_status
         
-            
-    ##################################################
-    # RECEIVE
-    ##################################################
+    # Método generico de recebimento, chamado por outros metodos especificos por tipo de msg
     def _recvfrom(self):
         pckt_bytes, server_addr = self.soc.recvfrom(SIZE)
         pckt = PacketClass.try_create_from_bytes(pckt_bytes)
@@ -52,6 +50,9 @@ class ClientSocket:
             socket.timeout("malformed packet")
         return pckt, server_addr
     
+    
+    # Método de recebimento do HEL, realiza a verificação da dica da senha (com os "?")
+    # Estabelece o tamanho da senha
     def recv_res_to_hel(self):
         pckt, server_addr = self._recvfrom()
         
@@ -66,14 +67,17 @@ class ClientSocket:
         PwdGuess.pwd_size = pwd_size
         return pckt
     
+    # Método do recebimento de RES para o TRY, generico
     def recv_res_to_try(self):
         pckt, server_addr = self._recvfrom()
         return pckt
     
+    # Método do recebimento de RES para o BYE, generico
     def recv_res_to_bye(self):
         pckt, server_addr = self._recvfrom()
         return pckt
     
+    # Atualiza os valores de maximo de tentativas e do tamanho da senha
     def validate_res_to_hel(self, pckt: PacketClass):
         if True:
             self.max_tries = pckt.numseq
@@ -90,11 +94,15 @@ class ClientSocket:
         if True:
             return True
     
+    # Método para gerar o pckt do HEL, numseq fixo em 0
     def generate_hel_pckt(self):
         hel_pckt = PacketClass(type=TYPE_ENUM.HEL, numseq=0)
         
         return hel_pckt
 
+    # Método para gerar o pckt dos TRY, que aumenta o numero de tries
+    # e possui numseq variável. Aqui ele precisa inserir a pwd no pckt
+    # Ele atualiza também o numseq do ultimo TRY
     def generate_try_pckt(self, pwd_guess_txt):
         
         self.try_count += 1
@@ -108,6 +116,8 @@ class ClientSocket:
         )
         return try_pckt
 
+    # Método para gerar o pckt do BYE, que tem o numseq vinculado ao ultimo
+    # enviado
     def generate_bye_pckt(self):
         bye_pckt = PacketClass(
             type=TYPE_ENUM.BYE,
@@ -115,6 +125,7 @@ class ClientSocket:
         )
         return bye_pckt
 
+    # Obtem pwd da linha de comando
     def get_new_guess(self):
         
         pwd_guess_txt = sys.stdin.readline().strip()
@@ -136,11 +147,10 @@ def main():
 
     server_addr = (host, port)
 
-    with ClientSocket(server_addr) as client:
-        client.connect_to_server()
-        
+    with ClientSocket(server_addr) as client: 
         hel_pckt = client.generate_hel_pckt()
         
+        # LOOP DO HEL: tenta enviar, valida a RES e registra NA e NT
         for i in range(SAW_TRIES):
             try:
                 send_status = client.sendto_server(hel_pckt)
@@ -152,7 +162,7 @@ def main():
                     break
                 else:
                     print("CLIENT error validating RES to HEL")
-                
+    
             except socket.timeout as msg:
                 if i == SAW_TRIES - 1:
                     print("NO RES")
@@ -164,6 +174,7 @@ def main():
                 print("CONNECTION REFUSED")
                 sys.exit()
 
+        # LOOP DO TRY: Obtem pwd, envia pacote, obtem RES e repete quando há erro
         tries_success = 0
         while tries_success < max_tries - 1:
             pwd_guess = client.get_new_guess()
@@ -186,15 +197,17 @@ def main():
                     print("CONNECTION REFUSED")
                     sys.exit()
 
+            # Quanto recebe um ERR, faz o registro adequado e diminui 1 das tentativas
             if res_to_try_pckt.type == TYPE_ENUM.ERR:
                 if res_to_try_pckt.numseq > 0:
                     print(f"RETRY {res_to_try_pckt.numseq}")
-                    client.try_count -= 1  # desfaz incremento: retry usa o mesmo numseq
+                    client.try_count -= 1
                 else:
                     print("ERRO")
                     sys.exit()
                 continue
-
+            
+            # Obtem o padrão do server e verifica se é o erto
             pattern = res_to_try_pckt.pwd_guess.txt[:client.pwd_size]
             print(f"{client.try_count}({res_to_try_pckt.numseq}) {pattern}")
             tries_success += 1
@@ -203,7 +216,8 @@ def main():
                 break
 
         bye_pckt = client.generate_bye_pckt()
-                        
+        
+        # LOOP DO BYE: gera pacote, recebe RES, printa a resposta certa
         for i in range(SAW_TRIES):
             try:
                 send_status = client.sendto_server(bye_pckt)

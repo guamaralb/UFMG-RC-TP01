@@ -1,8 +1,11 @@
+# GUSTAVO AMARAL BERNARDINO
+
 from random import randrange
 
 class PwdGuess():
     pwd_size = 0
     
+    # Permite a inicialização de pwd com bytes ou txt
     def __init__(self, pwd_guess_txt: str = None, pwd_guess_bytes: bytes = None):
         if pwd_guess_txt is not None:
             if self._check_is_all_zeros(pwd_guess_txt):
@@ -11,6 +14,7 @@ class PwdGuess():
             if self.is_valid(pwd_guess_txt):
                 self.txt = pwd_guess_txt
 
+                # Depois de confirmar que o pwd txt é valido, gera o pwd em bytes
                 pwd_bytes = b""
 
                 for char in self.txt:
@@ -29,6 +33,7 @@ class PwdGuess():
         elif pwd_guess_bytes is not None:
             self.bytes = pwd_guess_bytes
 
+            # Gera o pwd em txt com base nos bytes
             pwd_txt = ""
 
             for value in self.bytes:
@@ -38,17 +43,17 @@ class PwdGuess():
                     pwd_txt += chr(value)
 
             self.txt = pwd_txt   
-        
-         
+    
+    # Valida o texto da pwd com base nas regras
     def is_valid(self, txt = None):
         if txt is None:
             txt = self.txt
 
-        # size
+        # Validação de tamanho
         if len(txt) == 0 or len(txt) > 8:
             return False
 
-        # valid chars
+        # Validação de caracteres permitidos
         for c in txt:
             if c not in "0123456789 ?*+-":
                 return False
@@ -88,7 +93,7 @@ class PwdGuess():
         else:
             return False
 
-        # repetition
+        # Validação de não-repetição de caracteres, quando números
         for i in range(self.pwd_size):
             if txt[i].isdigit():
                 for j in range(len(txt)):
@@ -124,21 +129,3 @@ class PwdGuess():
             return self._create_random_pwd()
 
         return pwd_txt
-    
-    def _encode_pwd(self):
-        pwd_bytes = b""
-
-        for char in self.txt:
-            if char.isdigit():
-                value = int(char)
-            else:
-                value = ord(char)
-
-            pwd_bytes += bytes([value])
-
-        while len(pwd_bytes) < 8:
-            pwd_bytes += b" "
-
-        return pwd_bytes
-
-
