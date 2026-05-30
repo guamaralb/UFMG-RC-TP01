@@ -14,7 +14,6 @@ class ServerSocket:
         self.max_tries = int(max_tries)
         self.pwd_size = len(pwd_answer_txt)
         self.numseq = 1
-        ##print("~SERVER created")
         
     def __enter__(self):
         return self
@@ -25,22 +24,18 @@ class ServerSocket:
     def bind(self, addr):
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc.bind(addr)
-        ##print("~SERVER binded to: ", addr)
 
     def _set_client(self, client_addr):
         self.client_addr = client_addr
-        ##print("~SERVER client set:", client_addr)
     
     def close(self):
         self.soc.close()
-        ##print("~SERVER socket closed")
 
     ##################################################
     # SEND
     ##################################################
     def sendto_client(self, pckt: PacketClass):
         send_status = self.soc.sendto(pckt.bytes, self.client_addr)
-        ##print("~SERVER pckt sent: ", pckt.bytes)
         return send_status
 
     ##################################################
@@ -68,7 +63,6 @@ class ServerSocket:
     # PCKT GENERATORS
     ##################################################
     def generate_pkct_res_to_hel(self):
-        ##print("~SERVER generating RES to HEL pckt")
         pwd_guess_sample = "?" * self.pwd_size + " " * (8 - self.pwd_size)
         
         pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_sample)
@@ -76,7 +70,6 @@ class ServerSocket:
         return res_to_hel_pckt
     
     def generate_pkct_res_to_try(self, pckt_try: PacketClass):
-        ##print("~SERVER generating RES to TRY pckt")
         try_numseq = pckt_try.numseq
         
         pwd_answer_to_try_txt = self._generate_pattern_to_pwd_guess(pckt_try.pwd_guess)

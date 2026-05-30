@@ -5,21 +5,20 @@ class PwdGuess():
     pwd_size = 0
     
     def __init__(self, pwd_guess_txt: str = None, pwd_guess_bytes: bytes = None):
-        #print("~", pwd_guess_txt, pwd_guess_bytes)
-            if isinstance(pwd_guess_txt, str):
+        if isinstance(pwd_guess_txt, str):
+            if self._check_is_all_zeros(pwd_guess_txt):
+                pwd_guess_txt = self._create_random_pwd()
 
-                if self._check_is_all_zeros(pwd_guess_txt):
-                    pwd_guess_txt = self._create_random_pwd()
-
+            if self._validate_pwd_guess(pwd_guess_txt):
                 self.txt = pwd_guess_txt
                 self.bytes = self._encode_pwd()
 
-            elif isinstance(pwd_guess_bytes, bytes):
-                self.bytes = pwd_guess_bytes
-                self.txt = self._decode_pwd()
+        elif isinstance(pwd_guess_bytes, bytes):
+            self.bytes = pwd_guess_bytes
+            self.txt = self._decode_pwd()
 
-            else:
-                print("PWDGUESS: Error de nenhum valor informado no tipo correto")            
+        else:
+            raise Exception("Classe inicializada sem args")
 
     def is_valid(self):
         return self._validate_pwd_guess(self.txt)
@@ -27,15 +26,12 @@ class PwdGuess():
     
     def _validate_pwd_guess(self, txt):
         if not self._has_right_size(txt):
-            #print("~A")
             return False
 
         if not self._check_valid_chars(txt):
-            #print("~B")
             return False
 
         if self._check_repeated_chars(txt):
-            #print("~C")
             return False
 
         return True

@@ -18,7 +18,6 @@ class ClientSocket:
         self.pwd_size = -1
         
         self.soc.settimeout(1.0)
-        ##print("~CLIENT created")
         
         
     def __enter__(self):
@@ -31,18 +30,15 @@ class ClientSocket:
         
     def connect_to_server(self):
         self.soc.connect(self.server_addr)
-        ##print("~CLIENT connected to server: ", self.server_addr)
         
     def close(self):
         self.soc.close()
-        ##print("~CLIENT socket closed")
         
     ##################################################
     # SEND
     ##################################################
     def sendto_server(self, pckt: PacketClass):
         send_status = self.soc.sendto(pckt.bytes, self.server_addr)
-        ##print("~CLIENT pckt sent: ", pckt.txt())
         return send_status
         
             
@@ -83,7 +79,6 @@ class ClientSocket:
     ##################################################
     def validate_res_to_hel(self, pckt: PacketClass):
         if True:
-            ##print("~CLIENT RES to HEL validated")
             self.max_tries = pckt.numseq
             self.pwd_size = pckt.pwd_guess.txt.count("?")
             return True
@@ -91,13 +86,11 @@ class ClientSocket:
 
     def validate_res_to_try(self, pckt: PacketClass):
         if True:
-            ##print("~CLIENT RES to TRY validated")
             return True
 
 
     def validate_res_to_bye(self, pckt: PacketClass):
         if True:
-            ##print("~CLIENT RES to TRY validated")
             return True
 
     ##################################################
@@ -105,7 +98,6 @@ class ClientSocket:
     ##################################################
     
     def generate_hel_pckt(self):
-        ##print("~CLIENT generating HEL pckt")
         hel_pckt = PacketClass(type=TYPE_ENUM.HEL, numseq=0)
         
         return hel_pckt
@@ -115,7 +107,6 @@ class ClientSocket:
         self.try_count += 1
         numseq = self.try_count
         self.last_try_numseq = numseq
-        ##print("~CLIENT generating TRY (", self.try_count, "pckt")
         pwd_guess = PwdGuess(pwd_guess_txt=pwd_guess_txt)
         try_pckt = PacketClass(
             type=TYPE_ENUM.TRY,
@@ -125,7 +116,6 @@ class ClientSocket:
         return try_pckt
 
     def generate_bye_pckt(self):
-        ##print("~CLIENT generating BYE (", self.try_count, "pckt")
         bye_pckt = PacketClass(
             type=TYPE_ENUM.BYE,
             numseq=self.last_try_numseq,
