@@ -25,3 +25,5 @@ sleep 1
 python3 rc_tp01/client.py localhost 5555
 """
 
+
+[tool.poetry.dependencies]

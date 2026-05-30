@@ -5,8 +5,8 @@ class PwdGuess():
     
     def __init__(self, pwd_guess_txt: str = None, pwd_guess_bytes: bytes = None, is_hel=False):
         self.is_hel = is_hel
-        
-        if pwd_guess_txt is not None:
+        print("PWDGUESS: ", pwd_guess_txt, pwd_guess_bytes)        
+        if isinstance(pwd_guess_txt, str):
             
             if self._check_is_all_zeros(pwd_guess_txt):
                 pwd_guess_txt = self._create_random_pwd()
@@ -16,33 +16,33 @@ class PwdGuess():
                 self.bytes = pwd_guess_txt.encode()
                 
             else:
-                print("ERRO: SENHA INVALIDA")
+                print("PWDGUESS: Error de senha invalida quando txt")
         
-        elif pwd_guess_bytes is not None:
+        elif isinstance(pwd_guess_bytes, bytes):
             self.bytes = pwd_guess_bytes
             self.txt = pwd_guess_bytes.decode()
             
             if not self._validate_pwd_guess(self.txt):
-                print("ERRO: senha inválida")
+                print("PWDGUESS: Error de senha invalida quando bytes")
 
         else:
-            print("ERRO: nenhum valor informado")
+            print("PWDGUESS: Error de nenhum valor informado no tipo correto")
 
 
     def _validate_pwd_guess(self, txt):
         if self.is_hel and txt == " " * 8:
             return True
 
-        if len(txt) != self.pwd_size:
-            print("BB")
+        if self._check_size(txt):
+            print("ERRO NA VALIDAÇÃO DA SENHA: B")
             return False
 
         if not self._check_valid_chars(txt):
-            print("CC")
+            print("ERRO NA VALIDAÇÃO DA SENHA: C")
             return False
 
         if self._check_repeated_chars(txt):
-            print("DD")
+            print("ERRO NA VALIDAÇÃO DA SENHA: D")
             return False
 
         return True
@@ -65,6 +65,19 @@ class PwdGuess():
                 return False
         
         return True
+
+
+    def _check_size(self, txt):
+        spaces = 0
+        
+        for c in txt:
+            if c == " ":
+                spaces += 1
+            
+        if self.pwd_size + spaces == 8:
+            True
+        else:
+            False
 
 
     def _check_repeated_chars(self, txt):
