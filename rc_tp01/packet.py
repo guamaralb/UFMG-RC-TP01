@@ -1,9 +1,10 @@
 from enum import Enum
 import struct
+from pwd_guess import PwdGuess
 
-STRUCT_CODE = "!BBHBBBBBBBB"
+STRUCT_CODE = "!BBH8s"
 
-class MSG_TYPE(Enum):
+class TYPE_ENUM(Enum):
     HEL = 1
     TRY = 2
     RES = 3
@@ -11,55 +12,91 @@ class MSG_TYPE(Enum):
     ERR = 5
 
 
-class Packet():
-    def __init__(self, type, ns, pwd_guess):
+class PacketClass():
+    def __init__(
+        self,
+        type: bytes=None,
+        checksum: bytes=None,
+        seqnum: int=None,
+        pwd_guess: PwdGuess=None,
+        pckt_bytes: bytes=None
+    ):
+        if pckt_bytes is None:
+            if isinstance(type, TYPE_ENUM):
+                self.type = type
+            else:
+                ...
+                
+            if isinstance(seqnum, int):
+                self.seqnum = int(seqnum)
+            else:
+                ...
+                
+            if isinstance(pwd_guess, PwdGuess):
+                self.pwd_guess = pwd_guess
+            else:
+                ...        
         
-        if type is MSG_TYPE:
-            self.type = type
-        else:
-            ...
-            
-        if ns is int:
-            self.ns = ns
-            
-        if pwd_guess is str:
-            self.pwd_guess = pwd_guess
-            
-        self.check = 0
-       
+            if checksum is None:
+                self.checksum = self._calculate_checksum()
+            else:
+                self.checksum = checksum
+                
+            self.bytes = self._pack()
         
-    def __init__(self, pckg_bytes):
-        self._unpack(pckg_bytes)
-            
+        else:           
+            self._unpack(pckt_bytes)
     
-    def pack(self):
-        pckg_bytes = struct.pack(
+    def _calculate_checksum(self):
+        partial_checksum = 0
+        
+        for b in self.pwd_guess.txt.encode():
+            partial_checksum ^= b
+        
+        
+        ns_bytes = struct.pack("!H", self.seqnum)
+        ns_high = ns_bytes[0]
+        ns_low = ns_bytes[1]
+        
+        bytes = [
+            self.type.value,
+            ns_high,
+            ns_low,
+            partial_checksum
+        ]
+        
+        final_checksum = 0
+        
+        for b in bytes:
+            final_checksum ^= b
+            
+        return final_checksum
+    
+    def _unpack(self, pckt_bytes):
+        type_value, self.checksum, self.seqnum, pwd_guess_bytes = struct.unpack(STRUCT_CODE, pckt_bytes)
+        
+        self.type = TYPE_ENUM(type_value)
+        self.pwd_guess = PwdGuess(pwd_guess_bytes=pwd_guess_bytes)
+        self.bytes = pckt_bytes
+            
+    def _pack(self):      
+        pckt_bytes = struct.pack(
             STRUCT_CODE,
-            self.type,
-            self.check,
-            self.a1,
-            self.a2,
-            self.a3,
-            self.a4,
-            self.a5,
-            self.a6,
-            self.a7,
-            self.a8
+            self.type.value,
+            self.checksum,
+            self.seqnum,
+            self.pwd_guess.bytes
         )
         
-        self.bytes = pckg_bytes
+        return pckt_bytes
     
     
-    def _unpack(self):
-        self.type,
-        self.check,
-        self.ns,
-        self.a1,
-        self.a2,
-        self.a3,
-        self.a4,
-        self.a5,
-        self.a6,
-        self.a7,
-        self.a8 = struct.unpack(STRUCT_CODE, self.pckg_bytes)
+    def txt(self):
+        return(
+            f"{str(self.type.name)} | "
+            f"{str(self.checksum)} | "
+            f"{str(self.seqnum)} | "
+            f"{str(self.pwd_guess.bytes)} | "
+        )
+
         

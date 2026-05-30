@@ -20,12 +20,8 @@ server = "python3 rc_tp01/server.py 5555 2345 6"
 client = "python3 rc_tp01/client.py localhost 5555"
 
 demo = """
-python3 rc_tp01/server.py 5555 2345 6 &
-sleep 5
+python3 rc_tp01/server.py 5555 12345678 6 &
+sleep 1
 python3 rc_tp01/client.py localhost 5555
 """
 
-[dependency-groups]
-dev = [
-    "taskipy (>=1.14.1,<2.0.0)"
-]
