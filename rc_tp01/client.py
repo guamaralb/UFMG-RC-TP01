@@ -154,59 +154,59 @@ def main():
             
                 if client.validate_res_to_hel(res_to_hel_pckt):
                     max_tries = client.max_tries
-                    print(f"[bold blue]NA={client.pwd_size}, NT={client.max_tries}[/bold blue]")
+                    print(f"NA={client.pwd_size}, NT={client.max_tries}")
                     break
                 else:
                     print("CLIENT error validating RES to HEL")
                 
             except socket.timeout as msg:
                 if i == SAW_TRIES - 1:
-                    print("[bold blue]NO RES[/bold blue]")
+                    print("NO RES")
                     sys.exit()
                 else:
                     continue
                 
             except ConnectionRefusedError as msg:
-                print("[bold blue]CONNECTION REFUSED[/bold blue]")
+                print("CONNECTION REFUSED")
                 sys.exit()
 
-        for i in range(max_tries):
+        tries_success = 0
+        while tries_success < max_tries - 1:
             pwd_guess = client.get_new_guess()
+            
+            try_pckt = client.generate_try_pckt(pwd_guess.txt)
+            res_to_try_pckt = None
 
-            if i < max_tries - 1:
-                try_pckt = client.generate_try_pckt(pwd_guess.txt)
-
-                for j in range(SAW_TRIES):
-                    try:
-                        send_status = client.sendto_server(try_pckt)
-                        res_to_try_pckt = client.recv_res_to_try()
-
-                        if client.validate_res_to_try(res_to_try_pckt):
-                            pattern = res_to_try_pckt.pwd_guess.txt[:client.pwd_size]
-
-                            print(f"[bold blue]{client.try_count}({res_to_try_pckt.numseq}) {pattern}[/bold blue]")
-                            break
-
-                        else:
-                            print("CLIENT error validating RES to TRY")
-
-                    except socket.timeout as msg:
-                        if j == SAW_TRIES - 1:
-                            print("[bold blue]NO RES[/bold blue]")
-                            sys.exit()
-
-                        else:
-                            continue
-
-                    except ConnectionRefusedError as msg:
-                        print("[bold blue]CONNECTION REFUSED[/bold blue]")
-                        sys.exit()
-
-                if res_to_try_pckt.pwd_guess.txt[:client.pwd_size] == "*" * client.pwd_size:
+            for j in range(SAW_TRIES):
+                try:
+                    send_status = client.sendto_server(try_pckt)
+                    res_to_try_pckt = client.recv_res_to_try()
                     break
 
+                except socket.timeout:
+                    if j == SAW_TRIES - 1:
+                        print("NO RES")
+                        sys.exit()
+
+                except ConnectionRefusedError:
+                    print("CONNECTION REFUSED")
+                    sys.exit()
+
+            if res_to_try_pckt.type == TYPE_ENUM.ERR:
+                if res_to_try_pckt.numseq > 0:
+                    print(f"RETRY {res_to_try_pckt.numseq}")
+                    client.try_count -= 1  # desfaz incremento: retry usa o mesmo numseq
                 else:
-                    continue
+                    print("ERRO")
+                    sys.exit()
+                continue
+
+            pattern = res_to_try_pckt.pwd_guess.txt[:client.pwd_size]
+            print(f"{client.try_count}({res_to_try_pckt.numseq}) {pattern}")
+            tries_success += 1
+
+            if pattern == "*" * client.pwd_size:
+                break
 
         bye_pckt = client.generate_bye_pckt()
                         
@@ -217,7 +217,7 @@ def main():
             
                 if client.validate_res_to_bye(res_to_bye_pckt):
                     pwd_answer = res_to_bye_pckt.pwd_guess.txt[:client.pwd_size]
-                    print(f"[bold blue]Senha={pwd_answer}[/bold blue]")
+                    print(f"Senha={pwd_answer}")
                     break
                 else:
                     print("CLIENT error validating RES to BYE")
@@ -225,13 +225,13 @@ def main():
                     
             except socket.timeout as msg:
                 if i == SAW_TRIES - 1:
-                    print("[bold blue]NO RES[/bold blue]")
+                    print("NO RES")
                     sys.exit()
                 else:
                     continue
                 
             except ConnectionRefusedError as msg:
-                print("[bold blue]CONNECTION REFUSED[/bold blue]")
+                print("CONNECTION REFUSED")
                 sys.exit()
         client.close()
         

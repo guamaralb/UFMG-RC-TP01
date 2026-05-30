@@ -90,7 +90,7 @@ class ServerSocket:
         ##print("~SERVER generating RES to BYE pckt")        
         
         pwd_answer_to_bye = PwdGuess(pwd_guess_txt=self.pwd_answer_txt)
-             
+
         res_to_bye_pckt = PacketClass(
             type=TYPE_ENUM.RES,
             numseq=-1,
@@ -98,6 +98,12 @@ class ServerSocket:
         )
 
         return res_to_bye_pckt
+
+    def generate_pkct_err(self, err_numseq: int):
+        return PacketClass(
+            type=TYPE_ENUM.ERR, 
+            numseq=err_numseq
+        )
     
     ##################################################
     # OTHER
@@ -171,8 +177,10 @@ def main():
                     last_client_numseq = try_or_bye_pckt.numseq
                     last_pckt_sent = res_to_try_pckt
 
-                else:
-                    print("SERVER error validating TRY pckt")
+                elif err_seqnum is not None:
+                    err_pckt = server.generate_pkct_err(err_seqnum)
+                    send_status = server.sendto_client(err_pckt)
+                    last_pckt_sent = err_pckt
 
             elif try_or_bye_pckt.type.name == "BYE":
                 bye_is_valid, err_seqnum = try_or_bye_pckt.is_valid(
@@ -189,8 +197,10 @@ def main():
                     server.close()
                     break
 
-                else:
-                    print("SERVER error validating BYE pckt")
+                elif err_seqnum is not None:
+                    err_pckt = server.generate_pkct_err(err_seqnum)
+                    send_status = server.sendto_client(err_pckt)
+                    last_pckt_sent = err_pckt
 
             server.numseq += 1
             

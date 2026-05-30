@@ -241,53 +241,53 @@ class TestLogicaJogo:
     def test_posicao_correta_retorna_estrela(self, server_4):
         """Dígito na posição certa → '*'."""
         pg = PwdGuess(pwd_guess_txt="2987")  # '2' correto em pos0
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer[0] == '*'
 
     def test_posicao_errada_retorna_mais(self, server_4):
         """Dígito presente mas em posição errada → '+'."""
         pg = PwdGuess(pwd_guess_txt="3256")  # '3' de "2345" em pos errada
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer[0] == '+'
 
     def test_ausente_retorna_menos(self, server_4):
         """Dígito não presente na senha → '-'."""
         pg = PwdGuess(pwd_guess_txt="1678")  # nenhum de 1,6,7,8 está em "2345"
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer == "----"
 
     def test_senha_correta_retorna_quatro_estrelas(self, server_4):
         """Senha completamente correta → '****'."""
         pg = PwdGuess(pwd_guess_txt="2345")
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer == "****"
 
     def test_caso_concreto_2154(self, server_4):
         """'2154' contra '2345' → '*-++'."""
         pg = PwdGuess(pwd_guess_txt="2154")
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer == "*-++"
 
     def test_caso_concreto_2495(self, server_4):
         """'2495' contra '2345' → '*+-*'."""
         pg = PwdGuess(pwd_guess_txt="2495")
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer == "*+-*"
 
     def test_caso_concreto_2745(self, server_4):
         """'2745' contra '2345' → '*-**'."""
         pg = PwdGuess(pwd_guess_txt="2745")
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert answer == "*-**"
 
     def test_resposta_tem_tamanho_correto(self, server_4):
         pg = PwdGuess(pwd_guess_txt="2154")
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert len(answer) == 4
 
     def test_resposta_contem_apenas_simbolos_validos(self, server_4):
         pg = PwdGuess(pwd_guess_txt="2154")
-        answer = server_4._generate_answer_to_pwd_guess(pg)
+        answer = server_4._generate_pattern_to_pwd_guess(pg)
         assert all(c in "*+-" for c in answer)
 
 
