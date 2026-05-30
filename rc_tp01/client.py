@@ -74,9 +74,6 @@ class ClientSocket:
         pckt, server_addr = self._recvfrom()
         return pckt
     
-    ##################################################
-    # VALIDATE
-    ##################################################
     def validate_res_to_hel(self, pckt: PacketClass):
         if True:
             self.max_tries = pckt.numseq
@@ -92,10 +89,6 @@ class ClientSocket:
     def validate_res_to_bye(self, pckt: PacketClass):
         if True:
             return True
-
-    ##################################################
-    # PCKT GENERATORS
-    ##################################################
     
     def generate_hel_pckt(self):
         hel_pckt = PacketClass(type=TYPE_ENUM.HEL, numseq=0)
@@ -122,12 +115,13 @@ class ClientSocket:
         )
         return bye_pckt
 
-    ##################################################
-    # OTHER
-    ##################################################
     def get_new_guess(self):
         
         pwd_guess_txt = sys.stdin.readline().strip()
+        
+        if pwd_guess_txt == "|":
+            sys.exit()
+            
         while(len(pwd_guess_txt) < self.pwd_size):
             pwd_guess_txt += " "
 

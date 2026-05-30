@@ -31,16 +31,10 @@ class ServerSocket:
     def close(self):
         self.soc.close()
 
-    ##################################################
-    # SEND
-    ##################################################
     def sendto_client(self, pckt: PacketClass):
         send_status = self.soc.sendto(pckt.bytes, self.client_addr)
         return send_status
 
-    ##################################################
-    # RECEIVE
-    ##################################################
     def _recvfrom(self):
         pckt_bytes, client_addr = self.soc.recvfrom(SIZE)
         pckt = PacketClass.try_create_from_bytes(pckt_bytes)
@@ -59,9 +53,6 @@ class ServerSocket:
             self._set_client(client_addr)
         return pckt
         
-    ##################################################
-    # PCKT GENERATORS
-    ##################################################
     def generate_pkct_res_to_hel(self):
         pwd_guess_sample = "?" * self.pwd_size + " " * (8 - self.pwd_size)
         
@@ -105,9 +96,6 @@ class ServerSocket:
             numseq=err_numseq
         )
     
-    ##################################################
-    # OTHER
-    ##################################################
     def _generate_pattern_to_pwd_guess(self, pwd_guess: PwdGuess):
         pwd_guess_txt = pwd_guess.txt
         pwd_answer_to_try_txt = ["."] * self.pwd_size        

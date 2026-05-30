@@ -1,45 +1,57 @@
 from random import randrange
-import struct
 
 class PwdGuess():
     pwd_size = 0
     
     def __init__(self, pwd_guess_txt: str = None, pwd_guess_bytes: bytes = None):
-        if isinstance(pwd_guess_txt, str):
+        if pwd_guess_txt is not None:
             if self._check_is_all_zeros(pwd_guess_txt):
                 pwd_guess_txt = self._create_random_pwd()
 
-            if self._validate_pwd_guess(pwd_guess_txt):
+            if self.is_valid(pwd_guess_txt):
                 self.txt = pwd_guess_txt
-                self.bytes = self._encode_pwd()
 
-        elif isinstance(pwd_guess_bytes, bytes):
+                pwd_bytes = b""
+
+                for char in self.txt:
+                    if char.isdigit():
+                        value = int(char)
+                    else:
+                        value = ord(char)
+
+                    pwd_bytes += bytes([value])
+
+                while len(pwd_bytes) < 8:
+                    pwd_bytes += b" "
+
+                self.bytes = pwd_bytes
+
+        elif pwd_guess_bytes is not None:
             self.bytes = pwd_guess_bytes
-            self.txt = self._decode_pwd()
 
-        else:
-            raise Exception("Classe inicializada sem args")
+            pwd_txt = ""
 
-    def is_valid(self):
-        return self._validate_pwd_guess(self.txt)
-    
-    
-    def _validate_pwd_guess(self, txt):
-        if not self._has_right_size(txt):
-            return False
+            for value in self.bytes:
+                if value >= 0 and value <= 9:
+                    pwd_txt += str(value)
+                else:
+                    pwd_txt += chr(value)
 
-        if not self._check_valid_chars(txt):
-            return False
-
-        if self._check_repeated_chars(txt):
-            return False
-
-        return True
+            self.txt = pwd_txt   
         
+         
+    def is_valid(self, txt = None):
+        if txt is None:
+            txt = self.txt
 
-    def _has_right_size(self, txt: str):
+        # size
         if len(txt) == 0 or len(txt) > 8:
             return False
+
+        # valid chars
+        for c in txt:
+            if c not in "0123456789 ?*+-":
+                return False
 
         frist = txt[0]
 
@@ -58,11 +70,12 @@ class PwdGuess():
                 if c != "0" and c != " ":
                     return False
 
-            return True
-
-        if frist.isdigit():
+        elif frist.isdigit():
             beg = txt[:self.pwd_size]
             end = txt[self.pwd_size:]
+
+            if len(beg) < self.pwd_size:
+                return False
 
             for c in beg:
                 if not c.isdigit():
@@ -72,9 +85,17 @@ class PwdGuess():
                 if c != "0" and c != " ":
                     return False
 
-            return True
+        else:
+            return False
 
-        return False
+        # repetition
+        for i in range(self.pwd_size):
+            if txt[i].isdigit():
+                for j in range(len(txt)):
+                    if i != j and txt[i] == txt[j]:
+                        return False
+
+        return True        
 
 
     def _check_is_all_zeros(self, txt):
@@ -87,25 +108,7 @@ class PwdGuess():
 
         return True
         
-        
-    def _check_valid_chars(self, txt):
-        for c in txt:
-            if c not in "0123456789 ?*+-":
-                return False
-        
-        return True
 
-
-
-    def _check_repeated_chars(self, txt):
-        for i in range(self.pwd_size):
-            if txt[i].isdigit():
-                for j in range(len(txt)):
-                    if i != j and txt[i] == txt[j]:
-                        return True
-        return False
-    
-    
     def _create_random_pwd(self):
         size = self.pwd_size
 
@@ -117,30 +120,25 @@ class PwdGuess():
         while len(pwd_txt) < size:
             pwd_txt = "0" + pwd_txt
 
-        if not self._validate_pwd_guess(pwd_txt):
+        if not self.is_valid(pwd_txt):
             return self._create_random_pwd()
 
         return pwd_txt
     
     def _encode_pwd(self):
-        result = b''
+        pwd_bytes = b""
 
-        for c in self.txt:
-            if c.isdigit():
-                result += bytes([int(c)])
+        for char in self.txt:
+            if char.isdigit():
+                value = int(char)
             else:
-                result += bytes([ord(c)])
+                value = ord(char)
 
-        return result
+            pwd_bytes += bytes([value])
+
+        while len(pwd_bytes) < 8:
+            pwd_bytes += b" "
+
+        return pwd_bytes
 
 
-    def _decode_pwd(self):
-        txt = ''
-
-        for b in self.bytes:
-            if 0 <= b <= 9:
-                txt += str(b)
-            else:
-                txt += chr(b)
-
-        return txt

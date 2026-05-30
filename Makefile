@@ -11,3 +11,7 @@ demo:
 
 test:
 	poetry run pytest tests/ -v
+
+
+test2:
+	poetry run pytest tests_game/ -v
